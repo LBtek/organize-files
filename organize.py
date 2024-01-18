@@ -70,18 +70,21 @@ def cleaning(root_path):
         if not filenames and not dirnames:
             shutil.rmtree(dirpath)
 
-cleaning(path_to_scan)
-
-files = [item for item in path_to_scan.rglob("*") if item.is_file()]
-
 if os.path.isdir(destination_path):
     cleaning(destination_path)
     subprocess.run(['chmod', '-R', '777', str(destination_path)])
 elif files:
-    subprocess.run(['chmod', '-R', '777', str(path_to_scan)])
     folder_name = destination.split('/')[-1]
     print(f"[+] Making {folder_name} folder")
     os.makedirs(destination_path)
+
+cleaning(path_to_scan)
+
+subprocess.run(['chmod', '-R', '777', str(path_to_scan)])
+
+files = [item for item in path_to_scan.rglob("*") if item.is_file()]
+
+os.environ.pop('GTK_USE_PORTAL', None)
 
 for file in files: 
     mime_type, _ = mimetypes.guess_type(file)
@@ -99,22 +102,29 @@ for file in files:
     base_file_path, file_and_ext = os.path.split(file)
     new_file_destination = os.path.join(destination_folder_path, file_and_ext)
 
-    if os.path.exists(new_file_destination):
-        if os.stat(file).st_size == os.stat(new_file_destination).st_size:
-            os.environ.pop('GTK_USE_PORTAL', None)
-            send2trash(file)
+    if file and file.is_file():
+        if os.path.exists(new_file_destination):
+            if os.stat(file).st_size == os.stat(new_file_destination).st_size:
+                if file and file.is_file():
+                    send2trash(file)
+            else:
+                now = datetime.now()
+                date_time = now.strftime('%Y%m%d') + str(now.microsecond)
+                filename, ext = os.path.splitext(file_and_ext)
+                if file and file.is_file():
+                    shutil.move(file, os.path.join(destination_folder_path, filename + date_time + ext))
         else:
-            now = datetime.now()
-            date_time = now.strftime('%Y%m%d') + str(now.microsecond)
-            filename, ext = os.path.splitext(file_and_ext)
-            shutil.move(file, os.path.join(destination_folder_path, filename + date_time + ext))
-    else:
-        if not os.path.isdir(destination_folder_path):
-            print(f"[+] Making {destination_folder_name} folder")
-            os.makedirs(destination_folder_path)
+            if not os.path.isdir(destination_folder_path):
+                print(f"[+] Making {destination_folder_name} folder")
+                os.makedirs(destination_folder_path)
 
-        print(f"[*] Movendo {file} para {destination_folder_name}")
-        shutil.move(file, new_file_destination)
+        try:
+            if file and file.is_file():
+                shutil.move(file, new_file_destination)
+                print(f"[*] Movendo {file} para {destination_folder_name}")
+        except: 
+            if file and file.is_file():
+                send2trash(file)
 
 cleaning(path_to_scan)
 
@@ -123,10 +133,21 @@ others_folder_path = os.path.join(destination_path, 'Outros')
 for dirpath, dirnames, filenames in os.walk(path_to_scan):
     if dirnames:
         for dirname in dirnames:
-            shutil.move(os.path.join(dirpath, dirname), others_folder_path)
+            try:
+                shutil.move(os.path.join(dirpath, dirname), others_folder_path)
+            except:
+                None
     if filenames:
         for filename in filenames:
-            shutil.move(os.path.join(dirpath, filename), others_folder_path)
+            file = os.path.join(dirpath, filename)
+            try:
+                if os.path.exists(file):
+                    shutil.move(file, others_folder_path)
+            except:
+                file_in_others = os.path.join(others_folder_path, filename)
+                if os.path.exists(file_in_others):
+                    if os.path.exists(file) and os.stat(file).st_size == os.stat(file_in_others).st_size:
+                        send2trash(file)
 
     cleaning(dirpath)
 
