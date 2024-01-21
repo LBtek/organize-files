@@ -63,12 +63,19 @@ for dirpath, dirnames, filenames in os.walk(path_to_scan):
     for dirname in dirnames:
         name = str(dirname)
         if name == 'node_modules' or name == 'vendor' or name == '.gradle' or name == '.m2':
+            subprocess.run(['chmod', '-R', '777', str(dirpath)])
             shutil.rmtree(os.path.join(dirpath, dirname))
 
 def cleaning(root_path):
     for dirpath, dirnames, filenames in os.walk(root_path):
         if not filenames and not dirnames:
             shutil.rmtree(dirpath)
+
+subprocess.run(['chmod', '-R', '777', str(path_to_scan)])
+
+cleaning(path_to_scan)
+
+files = [item for item in path_to_scan.rglob("*") if item.is_file()]
 
 if os.path.isdir(destination_path):
     cleaning(destination_path)
@@ -77,12 +84,6 @@ elif files:
     folder_name = destination.split('/')[-1]
     print(f"[+] Making {folder_name} folder")
     os.makedirs(destination_path)
-
-cleaning(path_to_scan)
-
-subprocess.run(['chmod', '-R', '777', str(path_to_scan)])
-
-files = [item for item in path_to_scan.rglob("*") if item.is_file()]
 
 os.environ.pop('GTK_USE_PORTAL', None)
 
@@ -94,7 +95,7 @@ for file in files:
         destination_folder_name = mime_type.split('/')[-1].split('.')[-1]
     
     if not extensions.get(destination_folder_name):
-        continue
+        destination_folder_name = os.path.join('Outros/', destination_folder_name)
     else:
         destination_folder_name = os.path.join(extensions.get(destination_folder_name), destination_folder_name)
 
@@ -128,7 +129,10 @@ for file in files:
 
 cleaning(path_to_scan)
 
-others_folder_path = os.path.join(destination_path, 'Outros')
+others_folder_path = os.path.join(destination_path, '/Outros/Outros')
+
+if not os.path.isdir(others_folder_path):
+    os.makedirs(others_folder_path)
 
 for dirpath, dirnames, filenames in os.walk(path_to_scan):
     if dirnames:
