@@ -34,7 +34,6 @@ extensions = {
     "m3u8": "vídeo",
     "webm": "vídeo",
     "mts": "vídeo",
-    "xlsx": "planilhas",
     "rar": "compactados",
     "zip": "compactados",
     "gz": "compactados",
@@ -43,6 +42,7 @@ extensions = {
     "ppt": "apresentações",
     "presentation": "apresentações",
     "csv": "planilhas",
+    "xlsx": "planilhas",
     "sheet": "planilhas",
     "exe": "programas",
     "msi": "programas",
@@ -95,7 +95,8 @@ for file in files:
         destination_folder_name = mime_type.split('/')[-1].split('.')[-1]
     
     if not extensions.get(destination_folder_name):
-        destination_folder_name = os.path.join('Outros/', destination_folder_name)
+        '''destination_folder_name = os.path.join('Outros/', destination_folder_name)'''
+        continue
     else:
         destination_folder_name = os.path.join(extensions.get(destination_folder_name), destination_folder_name)
 
@@ -129,30 +130,40 @@ for file in files:
 
 cleaning(path_to_scan)
 
-others_folder_path = os.path.join(destination_path, '/Outros/Outros')
+others_folder_path = os.path.join(destination_path, '/Outros')
 
 if not os.path.isdir(others_folder_path):
     os.makedirs(others_folder_path)
 
-for dirpath, dirnames, filenames in os.walk(path_to_scan):
-    if dirnames:
-        for dirname in dirnames:
-            try:
-                shutil.move(os.path.join(dirpath, dirname), others_folder_path)
-            except:
-                None
-    if filenames:
-        for filename in filenames:
-            file = os.path.join(dirpath, filename)
-            try:
-                if os.path.exists(file):
-                    shutil.move(file, others_folder_path)
-            except:
-                file_in_others = os.path.join(others_folder_path, filename)
-                if os.path.exists(file_in_others):
-                    if os.path.exists(file) and os.stat(file).st_size == os.stat(file_in_others).st_size:
-                        send2trash(file)
+others_folders = [item for item in os.listdir(path_to_scan) if os.path.isdir(item)]
 
-    cleaning(dirpath)
+for dirname in others_folders:
+    try:
+        folder_path = os.path.join(path_to_scan, dirname)
+        if not os.path.isdir(os.path.join(others_folder_path, dirname)):
+            shutil.move(folder_path, others_folder_path)
+        else:
+            now = datetime.now()
+            date_time = now.strftime('%Y%m%d') + str(now.microsecond)
+            new_dirpath = str(folder_path) + date_time
+            os.rename(folder_path, new_dirpath)
+            shutil.move(new_dirpath, others_folder_path)
+    except:
+        None
+
+others_files = [item for item in os.listdir(path_to_scan) if os.path.isfile(item)]
+
+for file in others_files:
+    file_path = os.path.join(path_to_scan, file)
+    try:
+        if os.path.isfile(file_path):
+            shutil.move(file_path, others_folder_path)
+    except:
+        file_in_others = os.path.join(others_folder_path, file)
+        if os.path.isfile(file_in_others):
+            if os.path.isfile(file_path) and os.stat(file_path).st_size == os.stat(file_in_others).st_size:
+                send2trash(file_path)
+
+cleaning(path_to_scan)
 
 cleaning(destination_path)
